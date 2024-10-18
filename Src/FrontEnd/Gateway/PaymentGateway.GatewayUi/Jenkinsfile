@@ -4,9 +4,11 @@ pipeline{
     stages {
         stage('Fetch Code') {
             when {
-                changeset "**/Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/**"  // Only trigger when files in the 'src' folder change
-                changeset "Src/Backend/PaymentGateway.Domain/PaymentGateway.Domain.csproj"
-                changeset "BuildingBlocks/Common.Helper/Common.Helper.csproj"
+                anyOf {
+                    changeset "**/Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/**"  // Only trigger when files in the 'src' folder change
+                    changeset "Src/Backend/PaymentGateway.Domain/PaymentGateway.Domain.csproj"
+                    changeset "BuildingBlocks/Common.Helper/Common.Helper.csproj"
+                }
             }
             steps {
                 git url: 'git@github.com:eshghi26/paygate.git',
@@ -17,9 +19,11 @@ pipeline{
 
         stage('Build Docker Image'){
             when {
-                changeset "**/Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/**"  // Only trigger when files in the 'src' folder change
-                changeset "Src/Backend/PaymentGateway.Domain/PaymentGateway.Domain.csproj"
-                changeset "BuildingBlocks/Common.Helper/Common.Helper.csproj"
+                anyOf {
+                    changeset "**/Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/**"  // Only trigger when files in the 'src' folder change
+                    changeset "Src/Backend/PaymentGateway.Domain/PaymentGateway.Domain.csproj"
+                    changeset "BuildingBlocks/Common.Helper/Common.Helper.csproj"
+                }
             }
             steps {
                 script {
@@ -30,9 +34,11 @@ pipeline{
 
         stage('Deploy') {
             when {
-                changeset "**/Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/**"  // Only trigger when files in the 'src' folder change
-                changeset "Src/Backend/PaymentGateway.Domain/PaymentGateway.Domain.csproj"
-                changeset "BuildingBlocks/Common.Helper/Common.Helper.csproj"
+                anyOf {
+                    changeset "**/Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/**"  // Only trigger when files in the 'src' folder change
+                    changeset "Src/Backend/PaymentGateway.Domain/PaymentGateway.Domain.csproj"
+                    changeset "BuildingBlocks/Common.Helper/Common.Helper.csproj"
+                }
             }
             steps {
                 sh "docker run -dp 0.0.0.0:6060:8080 payui:V$BUILD_NUMBER"
