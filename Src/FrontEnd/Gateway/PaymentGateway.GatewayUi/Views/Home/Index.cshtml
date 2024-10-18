@@ -1,0 +1,306 @@
+﻿@{
+    ViewData["Title"] = "Payment Gateway";
+}
+@model PaymentViewModel
+
+<div class="row payment">
+    <div class="col-md-9 payment-left">
+        <h3 class="payment-heading">اطلاعات پرداخت</h3>
+        <div class="form-group" style="padding-top: 20px">
+            <div class="row">
+                <div class="col-md-2">
+                    <label>انتخاب کارت:</label>
+                </div>
+                <div class="col-md-7">
+                    <select class="form-select form-select-lg mb-3" id="cardList" style="direction: ltr">
+                        <option value="0" selected>-- لطفا یک کارت را انتخاب کنید --</option>
+                        @if (Model.Cards != null && Model.Cards.Any())
+                        {
+                            foreach (var card in Model.Cards)
+                            {
+                                <option value="@card.Value">@card.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-2">
+                    <label>شماره کارت:</label>
+                </div>
+                <div class="col-md-7">
+                    <div class="form-container">
+                        <div class="input-group">
+                            <input type="text" id="cardNumber" inputmode="numeric" pattern="\d{4} \d{4} \d{4} \d{4}" maxlength="19" placeholder="0000 0000 0000 0000" required>
+                            <span id="cardError" class="validation-span"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-2">
+                    <label>CVV2:</label>
+                </div>
+                <div class="col-md-2">
+                    <input type="text" id="cvvTxt" inputmode="numeric" maxlength="4" class="form-control">
+                    <span id="cvvError" class="validation-span"></span>
+                </div>
+            </div>
+            <div class="row" style="padding-top: 15px">
+                <div class="col-md-2">
+                    <label>تاریخ انقضاء:</label>
+                </div>
+                <div class="col-md-2">
+                    <input type="text" id="expMonthTxt" inputmode="numeric" maxlength="2" class="form-control" placeholder="ماه">
+                    <span id="expMonthError" class="validation-span"></span>
+                </div>
+                <div class="col-md-2">
+                    <input type="text" id="expYearTxt" inputmode="numeric" maxlength="2" class="form-control" placeholder="سال">
+                    <span id="expYearError" class="validation-span"></span>
+                </div>
+            </div>
+            <div class="row" style="padding-top: 15px">
+                <div class="col-md-2"></div>
+                <div class="col-md-7">
+                    <div class="form-check form-switch">
+                        <label class="form-check-label">اطلاعات این کارت برای پرداخت های بعدی ذخیره شود</label>
+                        <input class="form-check-input" type="checkbox" id="flexSwitchCheckChecked">
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="padding-top: 15px">
+                <div class="col-md-2">
+                    <label>کد تصویر:</label>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" id="captchaTxt" inputmode="numeric" maxlength="5" class="form-control" autocomplete="off">
+                    <span id="captchaError" class="validation-span"></span>
+                </div>
+                <div class="col-md-6">
+                    @* <img class="captcha" id="captcha-img" src="@Model.CaptchaAddress" width="140" height="40"> *@
+                    <img class="captcha" id="captcha-img" src="https://bpm.shaparak.ir/pgwchannel/captchaimg.jpg?RefId=B517E79EFA42D6F7" width="140" height="40">
+                </div>
+            </div>
+            <div class="row" style="padding-top: 30px">
+                <div class="col-md-4"></div>
+                <div class="col-md-5">
+                    <button type="button" class="btn btn-secondary btn-lg">انصراف</button>
+                    <button type="button" id="continueButton" class="btn btn-success btn-lg">ثبت و ادامه</button>
+                </div>
+                <div class="col-md-3"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 payment-right">
+        <h3>درگاه پرداخت امن</h3>
+        <p>زمان باقی مانده</p>
+        <div class="row">
+            <div class="col-md-3"></div>
+            <div class="col-md-3">
+                <span id="Minute" style="font-family: samim-fd; font-weight: bold">10</span>
+                <h6>دقیقه</h6>
+            </div>
+            <div class="col-md-3">
+                <span id="Second" style="font-family: samim-fd; font-weight: bold">00</span>
+                <h6>ثانیه</h6>
+            </div>
+            <div class="col-md-3"></div>
+        </div>
+        <h2 style="padding-top: 40px">مبلغ تراکنش</h2>
+        <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8">
+                <h4 style="font-family: samim-fd">@Model.Amount</h4>
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+        <h2 style="padding-top: 40px">نام سایت</h2>
+        <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8">
+                <h5>دیجی خدمات</h5>
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+       $('#continueButton').on('click', function() {
+           var isValid = true;
+
+           var captcha = $('#captchaTxt').val();
+           $('#captchaError').text('');
+           if (captcha.length < 5 || isNaN(captcha)) {
+                $('#captchaError').text('کد تصویر اجباری می باشد');
+                isValid = false;
+           }
+
+           var card = $('#cardNumber').val();
+           $('#cardError').text('');
+           if (card.length < 19) {
+                $('#cardError').text('شماره کارت 16 رقمی را وارد نمایید');
+                isValid = false;
+           }
+
+           var cvv = $('#cvvTxt').val();
+           $('#cvvError').text('');
+           if (cvv.length < 3 || isNaN(cvv)) {
+                $('#cvvError').text('فیلد اجباری');
+                isValid = false;
+           }
+
+           var expm = $('#expMonthTxt').val();
+           $('#expMonthError').text('');
+           if (expm.length < 1 || isNaN(expm)) {
+                $('#expMonthError').text('فیلد اجباری');
+                isValid = false;
+           }
+
+           if(expm < 1 || expm > 12){
+               $('#expMonthError').text('مقدار نا معتبر');
+                isValid = false;
+           }
+
+           var expy = $('#expYearTxt').val();
+           $('#expYearError').text('');
+           if (expy.length < 1 || isNaN(expy)) {
+                $('#expYearError').text('فیلد اجباری');
+                isValid = false;
+           }
+
+           if(expy < 3 || expy > 10){
+               $('#expYearError').text('مقدار نا معتبر');
+                isValid = false;
+           }
+
+           if(isValid){
+              let formData = {
+                 cardNumber: $("#cardNumber").val(),
+                 cvv2: $("#cvvTxt").val(),
+                 expMonth: $("#expMonthTxt").val(),
+                 expYear: $("#expYearTxt").val(),
+                 //isRegular: $("#IsRegular").is(":checked"),
+                 CaptchaCode: $("#captchaTxt").val(),
+               }
+
+              $.ajax({
+                 type: 'POST',
+                 url: '/Home/SendCardData',
+                 data: formData,
+                 success: function(response) {
+                     setCardItems(response);
+                 },
+                 error: function() {
+                     // در صورت بروز خطا
+                     console.log('خطا در ارسال درخواست');
+                 }
+               });
+           }
+       });
+    });
+       
+    $('#cardList').on('change', function() {
+        var selectedValue = $(this).val();
+
+        if(selectedValue === "0"){
+            setCardItems(null);
+        }
+        else{
+              $.ajax({
+              type: 'POST',
+              url: '/Home/CardListChange',
+              data: { selectedValue: selectedValue },
+              success: function(response) {
+                  setCardItems(response);
+              },
+              error: function() {
+                  // در صورت بروز خطا
+                  console.log('خطا در ارسال درخواست');
+              }
+          });
+        }
+    });
+
+    function setCardItems(cardItem){
+        console.log(cardItem);
+        $('#cardError').text('');
+        $('#cvvError').text('');
+        $('#expMonthError').text('');
+        $('#expYearError').text('');        
+
+        if(cardItem === null){
+            $('#cardNumber').val('');
+            $('#cvvTxt').val('');
+            $('#expMonthTxt').val('');
+            $('#expYearTxt').val('');
+
+            $("#cardNumber").prop("disabled", false);
+            $("#cvvTxt").prop("disabled", false);
+            $("#expMonthTxt").prop("disabled", false);
+            $("#expYearTxt").prop("disabled", false);
+        }
+        else{
+            $('#cardNumber').val(cardItem.cardNumber);
+            $('#cvvTxt').val(cardItem.cvv2);
+            $('#expMonthTxt').val(cardItem.expMonth);
+            $('#expYearTxt').val(cardItem.expYear);
+            
+             $("#cardNumber").prop("disabled", true);
+             $("#cvvTxt").prop("disabled", true);
+             $("#expMonthTxt").prop("disabled", true);
+             $("#expYearTxt").prop("disabled", true);
+
+        }
+    }
+
+    var timer = setInterval(showRemaining, 1000);;
+    var millisecond = @Model.ExpireTime;
+
+    function showRemaining() {
+        if (millisecond <= 0) {
+
+            clearInterval(timer);
+            return;
+        }
+
+        var minutes = Math.floor(millisecond / 60000);
+        var seconds = Math.floor((millisecond % 60000) / 1000);
+
+        document.getElementById('Minute').textContent = minutes.toString();
+        document.getElementById('Second').textContent = seconds.toString();
+
+        millisecond = millisecond - 1000;
+    }
+
+    document.getElementById('cardNumber').addEventListener('input', function (e) {
+        let value = e.target.value.replace(/\D/g, '');
+
+        if (value.length > 0) {
+            value = value.match(/.{1,4}/g).join(' ');
+        }
+
+        e.target.value = value;
+    });
+
+    document.getElementById('cvvTxt').addEventListener('input', function (e) {
+       let value = e.target.value.replace(/\D/g, '');
+       e.target.value = value;
+    });
+
+    document.getElementById('expMonthTxt').addEventListener('input', function (e) {
+       let value = e.target.value.replace(/\D/g, '');
+       e.target.value = value;
+    });
+
+    document.getElementById('expYearTxt').addEventListener('input', function (e) {
+       let value = e.target.value.replace(/\D/g, '');
+       e.target.value = value;
+    });
+
+    document.getElementById('captchaTxt').addEventListener('input', function (e) {
+       let value = e.target.value.replace(/\D/g, '');
+       e.target.value = value;
+    });
+</script>

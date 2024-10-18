@@ -1,0 +1,44 @@
+version: "3.3"
+
+services:
+  postgresdb:
+    container_name: postgresdb
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=Systemmige1
+      - POSTGRES_DB=PaymentGatewayDb
+    restart: always
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgresdb_data:/var/lib/postgresql/data/
+  
+  redisDb:
+    container_name: redisDb
+    restart: always
+    ports:
+      - "6381:6379"
+
+  paymentgateway.api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+    ports:
+      - "8081:8080"
+    depends_on:
+      - postgresdb
+  paymentgateway.paymentapi:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+    ports:
+      - "8080"
+
+
+  paymentgateway.gatewayui:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+    ports:
+      - "8080"
+

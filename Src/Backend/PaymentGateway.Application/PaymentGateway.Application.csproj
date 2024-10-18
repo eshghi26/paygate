@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Payment\Gateways\Commands\" />
+    <Folder Include="Payment\Merchants\Commands\" />
+    <Folder Include="Payment\UserCards\Commands\" />
+    <Folder Include="Security\Controllers\Commands\" />
+    <Folder Include="Security\Controllers\Queries\" />
+    <Folder Include="Security\Permissions\Commands\" />
+    <Folder Include="Security\Permissions\Queries\" />
+    <Folder Include="Security\PermissionTree\Commands\" />
+    <Folder Include="Security\PermissionTree\Queries\" />
+    <Folder Include="Security\Roles\Commands\" />
+    <Folder Include="Security\Roles\Queries\" />
+    <Folder Include="Security\UserRoles\Commands\" />
+    <Folder Include="Security\UserRoles\Queries\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="13.0.1" />
+    <PackageReference Include="MediatR" Version="12.4.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\Common.Helper\Common.Helper.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Logging\Logging.csproj" />
+    <ProjectReference Include="..\PaymentGateway.Domain\PaymentGateway.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

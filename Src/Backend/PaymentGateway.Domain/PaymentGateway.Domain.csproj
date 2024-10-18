@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Payment\Gateways\Dto\" />
+    <Folder Include="Payment\Merchants\Dto\" />
+    <Folder Include="Payment\Resources\Dto\" />
+    <Folder Include="Payment\UserCards\Dto\" />
+    <Folder Include="Security\Controllers\Dto\" />
+    <Folder Include="Security\Permissions\Dto\" />
+    <Folder Include="Security\PermissionTree\Dto\" />
+    <Folder Include="Security\Roles\Dto\" />
+    <Folder Include="Security\UserRoles\Dto\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\Common.Helper\Common.Helper.csproj" />
+  </ItemGroup>
+
+</Project>

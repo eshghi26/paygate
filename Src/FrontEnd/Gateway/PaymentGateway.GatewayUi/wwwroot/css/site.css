@@ -1,0 +1,63 @@
+html {
+    font-size: 14px;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+@font-face {
+    font-family: samim;
+    font-style: normal;
+    font-weight: 400;
+    src: url("../fonts/samim-font-v2.0.1/Samim.eot");
+    src: url("../fonts/samim-font-v2.0.1/Samim.woff") format('woff'), 
+        url("../fonts/samim-font-v2.0.1/Samim.ttf") format('ttf'), 
+        url("../fonts/samim-font-v2.0.1/Samim.woff2") format('woff2');
+}
+
+@font-face {
+    font-family: samim;
+    font-style: normal;
+    font-weight: bold;
+    src: url("../fonts/samim-font-v2.0.1/Samim-Bold.eot");
+    src: url("../fonts/samim-font-v2.0.1/Samim-Bold.woff") format('woff'), 
+        url("../fonts/samim-font-v2.0.1/Samim-Bold.ttf") format('ttf'), 
+        url("../fonts/samim-font-v2.0.1/Samim-Bold.woff2") format('woff2');
+}
+
+@font-face {
+    font-family: samim-fd;
+    font-style: normal;
+    font-weight: 400;
+    src: url("../fonts/samim-font-v2.0.1/Farsi-Digits/Samim-FD.eot");
+    src: url("../fonts/samim-font-v2.0.1/Farsi-Digits/Samim-FD.woff") format('woff'), 
+        url("../fonts/samim-font-v2.0.1/Farsi-Digits/Samim-FD.ttf") format('ttf'), 
+        url("../fonts/samim-font-v2.0.1/Farsi-Digits/Samim-FD.woff2") format('woff2');
+}
+
+@font-face {
+    font-family: samim-fd;
+    font-style: normal;
+    font-weight: bold;
+    src: url("../fonts/samim-font-v2.0.1/Farsi-Digits/Samim-Bold-FD.eot");
+    src: url("../fonts/samim-font-v2.0.1/Farsi-Digits/Samim-Bold-FD.woff") format('woff'), 
+        url("../fonts/samim-font-v2.0.1/Farsi-Digits/Samim-Bold-FD.ttf") format('ttf'), 
+        url("../fonts/samim-font-v2.0.1/Farsi-Digits/Samim-Bold-FD.woff2") format('woff2');
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    margin-bottom: 60px;
+    font-family: samim;
+}
