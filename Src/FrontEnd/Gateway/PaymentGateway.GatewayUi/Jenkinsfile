@@ -2,23 +2,10 @@ pipeline{
     agent any
 
     stages {
-       stage('Check for Changes') {
-            steps {
-                script {
-                    // Check if there are changes in the specified folder
-                    def changes = sh(script: "git diff --name-only HEAD HEAD~1 | grep '^Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/'", returnStatus: true)
-                    if (changes != 0) {
-                        echo "No changes detected in the specific folder. Aborting the pipeline."
-                        currentBuild.result = 'ABORTED'
-                        error("Pipeline aborted due to no changes in the specified folder.")
-                    } else {
-                        echo "Changes detected in the specified folder. Proceeding with the pipeline."
-                    }
-                }
-            }
-        }
-
         stage('Fetch Code') {
+            when {
+                changeset "Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/wwwroot/"  // Only trigger when files in the 'src' folder change
+            }
             steps {
                 git url: 'git@github.com:eshghi26/paygate.git',
                 branch: 'main',
@@ -27,6 +14,9 @@ pipeline{
         }
 
         stage('Build Docker Image'){
+            when {
+                changeset "Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/wwwroot/"  // Only trigger when files in the 'src' folder change
+            }
             steps {
                 script {
                     dockerImage = docker.build("payui:V$BUILD_NUMBER", "-f Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/Dockerfile .")
@@ -36,9 +26,12 @@ pipeline{
 
 
         stage('Deploy') {
-                steps {
-                    sh "docker run -dp 0.0.0.0:6060:8080 payui:V$BUILD_NUMBER"
-                }
+            when {
+                changeset "Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/wwwroot/"  // Only trigger when files in the 'src' folder change
+            }
+            steps {
+                sh "docker run -dp 0.0.0.0:6060:8080 payui:V$BUILD_NUMBER"
+            }
         }
     }
 
