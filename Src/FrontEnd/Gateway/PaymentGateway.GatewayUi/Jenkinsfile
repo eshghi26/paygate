@@ -2,6 +2,22 @@ pipeline{
     agent any
 
     stages {
+       stage('Check for Changes') {
+            steps {
+                script {
+                    // Check if there are changes in the specified folder
+                    def changes = sh(script: "git diff --name-only HEAD HEAD~1 | grep '^Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/'", returnStatus: true)
+                    if (changes != 0) {
+                        echo "No changes detected in the specific folder. Aborting the pipeline."
+                        currentBuild.result = 'ABORTED'
+                        error("Pipeline aborted due to no changes in the specified folder.")
+                    } else {
+                        echo "Changes detected in the specified folder. Proceeding with the pipeline."
+                    }
+                }
+            }
+        }
+
         stage('Fetch Code') {
             steps {
                 git url: 'git@github.com:eshghi26/paygate.git',
