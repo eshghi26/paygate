@@ -14,6 +14,8 @@
     <Folder Include="Security\Controllers\Dto\" />
     <Folder Include="Security\Permissions\Dto\" />
     <Folder Include="Security\PermissionTree\Dto\" />
+    <Folder Include="Security\Roles\Dto\" />
+    <Folder Include="Security\UserRoles\Dto\" />
   </ItemGroup>
 
   <ItemGroup>
