@@ -4,6 +4,8 @@ pipeline{
     environment {
         CONTAINER_NAME = "paymentuicont"
         IMAGE_NAME = "payui:V$BUILD_NUMBER"
+        PREVIOUS_BUILD = "${env.BUILD_NUMBER.toInteger() - 1}"
+        PRE_IMAGE = "payui:V$PREVIOUS_BUILD"
     }
 
     stages {
@@ -53,6 +55,7 @@ pipeline{
                         echo "Stopping and removing existing container..."
                         docker stop $CONTAINER_NAME || true
                         docker rm $CONTAINER_NAME || true
+                        docker rmi $PRE_IMAGE || true
                     else
                         echo "No previous container found."
                     fi
