@@ -13,7 +13,7 @@ pipeline{
         stage('Build Docker Image'){
             steps {
                 script {
-                    dockerImage = docker.build("payui:V$BUILD_NUMBER", "-f Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/Dockerfile")
+                    dockerImage = docker.build("payui:V$BUILD_NUMBER", "-f Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/Dockerfile .")
                 }
             }
         }
