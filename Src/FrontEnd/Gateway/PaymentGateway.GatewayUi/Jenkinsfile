@@ -1,0 +1,29 @@
+pipeline{
+    agent any
+
+    stages {
+        stage('Fetch Code') {
+            steps {
+                git url: 'git@github.com:eshghi26/paygate.git',
+                branch: 'main',
+                credentialsId: 'mygitubpk'
+            }
+        }
+
+        stage('Build Docker Image'){
+            steps {
+                script {
+                    dockerImage = docker.build("payui:V$BUILD_NUMBER", "Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/")
+                }
+            }
+        }
+
+
+        stage('Deploy') {
+                steps {
+                    sh "docker run -dp 0.0.0.0:6060:8080 payui:V$BUILD_NUMBER"
+                }
+        }
+    }
+
+}
