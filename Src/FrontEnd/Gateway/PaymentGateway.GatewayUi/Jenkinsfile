@@ -2,19 +2,14 @@ pipeline{
     agent any
 
     environment {
-        CONTAINER_NAME = "paymentuicont"
-        IMAGE_NAME = "payui:V$BUILD_NUMBER"
+        CONTAINER_NAME = "paymentuicontV$BUILD_NUMBER"
+        IMAGE_NAME = "eshghi26/paygateui:V$BUILD_NUMBER"
+        DOCKERHUB_CREDENTIALS = 'dockerhubcred'
+        DOCKERHUB_REPO = 'eshghi26/paygateui'
     }
 
     stages {
         stage('Fetch Code') {
-            when {
-                anyOf {
-                    changeset "**/Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/**"  // Only trigger when files in the 'src' folder change
-                    changeset "Src/Backend/PaymentGateway.Domain/PaymentGateway.Domain.csproj"
-                    changeset "BuildingBlocks/Common.Helper/Common.Helper.csproj"
-                }
-            }
             steps {
                 git url: 'git@github.com:eshghi26/paygate.git',
                 branch: 'main',
@@ -23,13 +18,6 @@ pipeline{
         }
 
         stage('Build Docker Image'){
-            when {
-                anyOf {
-                    changeset "**/Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/**"  // Only trigger when files in the 'src' folder change
-                    changeset "Src/Backend/PaymentGateway.Domain/PaymentGateway.Domain.csproj"
-                    changeset "BuildingBlocks/Common.Helper/Common.Helper.csproj"
-                }
-            }
             steps {
                 script {
                     dockerImage = docker.build(IMAGE_NAME, "-f Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/Dockerfile .")
@@ -37,14 +25,23 @@ pipeline{
             }
         }
 
-        stage('Delete Previous Container') {
-            when {
-                anyOf {
-                    changeset "**/Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/**"  // Only trigger when files in the 'src' folder change
-                    changeset "Src/Backend/PaymentGateway.Domain/PaymentGateway.Domain.csproj"
-                    changeset "BuildingBlocks/Common.Helper/Common.Helper.csproj"
+        stage('Push to Docker Hub') {
+            steps {
+                script {
+                    docker.withRegistry('', DOCKERHUB_CREDENTIALS) {
+                        dockerImage.push("V$BUILD_NUMBER")
+                    }
                 }
             }
+        }
+
+        stage('Delete Image from Jenkins') {
+            steps {
+                sh "docker rmi $DOCKERHUB_REPO:V$BUILD_NUMBER"
+            }
+        }
+
+        stage('Delete Previous Container') {
             steps {
                 script {
                     // Check if the container exists and stop it if running
@@ -62,13 +59,6 @@ pipeline{
         }
 
         stage('Deploy Latest Container') {
-            when {
-                anyOf {
-                    changeset "**/Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/**"  // Only trigger when files in the 'src' folder change
-                    changeset "Src/Backend/PaymentGateway.Domain/PaymentGateway.Domain.csproj"
-                    changeset "BuildingBlocks/Common.Helper/Common.Helper.csproj"
-                }
-            }
             steps {
                 sh "docker run --name $CONTAINER_NAME -dp 0.0.0.0:6060:8080 $IMAGE_NAME"
             }
