@@ -13,7 +13,7 @@ pipeline{
         stage('Fetch Code') {
             steps {
                 git url: 'git@github.com:eshghi26/paygate.git',
-                branch: 'master',
+                branch: 'main',
                 credentialsId: 'mygitubpk'
             }
         }
