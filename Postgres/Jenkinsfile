@@ -4,7 +4,7 @@ pipeline{
     environment {
         CONTAINER_NAME = 'paygatepostgrescont'
         DOCKERHUB_CREDENTIALS = 'dockerhubcred'
-        DOCKERHUB_REPO = 'paygateproj/paygatepostgres'
+        DOCKERHUB_REPO = 'eshghi26/paygatepostgres'
         DOCKERFILE_PATH = 'Postgres/Dockerfile'
         DB_VOLUME_NAME = "postgresdb_data"
     }
@@ -12,9 +12,9 @@ pipeline{
     stages {
         stage('Fetch Code') {
             steps {
-                git url: 'git@gitlab.com:rezadoodangi/paymentgateway.git',
+                git url: 'git@github.com:eshghi26/paygate.git',
                 branch: 'master',
-                credentialsId: 'mygithubpk'
+                credentialsId: 'mygitubpk'
             }
         }
 
