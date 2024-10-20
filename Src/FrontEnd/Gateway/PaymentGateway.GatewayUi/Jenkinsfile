@@ -2,8 +2,7 @@ pipeline{
     agent any
 
     environment {
-        CONTAINER_NAME = "paymentuicontV$BUILD_NUMBER"
-        IMAGE_NAME = "eshghi26/paygateui:V$BUILD_NUMBER"
+        CONTAINER_NAME = "paymentuicont"
         DOCKERHUB_CREDENTIALS = 'dockerhubcred'
         DOCKERHUB_REPO = 'eshghi26/paygateui'
     }
@@ -20,7 +19,7 @@ pipeline{
         stage('Build Docker Image'){
             steps {
                 script {
-                    dockerImage = docker.build(IMAGE_NAME, "-f Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/Dockerfile .")
+                    dockerImage = docker.build("$DOCKERHUB_REPO:V$BUILD_NUMBER", "-f Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/Dockerfile .")
                 }
             }
         }
@@ -32,12 +31,6 @@ pipeline{
                         dockerImage.push("V$BUILD_NUMBER")
                     }
                 }
-            }
-        }
-
-        stage('Delete Image from Jenkins') {
-            steps {
-                sh "docker rmi $DOCKERHUB_REPO:V$BUILD_NUMBER"
             }
         }
 
@@ -53,6 +46,21 @@ pipeline{
                     else
                         echo "No previous container found."
                     fi
+                    """
+                }
+            }
+        }
+
+        stage('Delete Previous Images from Jenkins') {
+            steps {
+                script {
+                    // Define the regular expression pattern for image names, excluding the current build's image
+                    def imagePattern = "^${DOCKERHUB_REPO}_.*"
+                    def currentImage = "${DOCKERHUB_REPO}:V$BUILD_NUMBER"
+
+                    // Find and remove all images matching the pattern, but exclude the current build's image
+                    sh """
+                    docker images --format "{{.Repository}}:{{.Tag}}" | grep "${imagePattern}" | grep -v "${currentImage}" | xargs -r docker rmi -f
                     """
                 }
             }
