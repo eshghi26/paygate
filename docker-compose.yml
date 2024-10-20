@@ -1,5 +1,3 @@
-version: "3.3"
-
 services:
   postgresdb:
     image: postgres
@@ -8,19 +6,19 @@ services:
     image: redis:alpine
 
   paymentgateway.api:
-    image: ${DOCKER_REGISTRY}paymentgatewayapi
+    image: ${DOCKER_REGISTRY-}paymentgatewayapi
     build:
       context: .
       dockerfile: Src/Backend/PaymentGateway.Api/Dockerfile
 
   paymentgateway.paymentapi:
-    image: ${DOCKER_REGISTRY}paymentgatewaypaymentapi
+    image: ${DOCKER_REGISTRY-}paymentgatewaypaymentapi
     build:
       context: .
       dockerfile: Src/Backend/PaymentGateway.PaymentApi/Dockerfile
 
   paymentgateway.gatewayui:
-    image: ${DOCKER_REGISTRY}paymentgatewaygatewayui
+    image: ${DOCKER_REGISTRY-}paymentgatewaygatewayui
     build:
       context: .
       dockerfile: Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/Dockerfile

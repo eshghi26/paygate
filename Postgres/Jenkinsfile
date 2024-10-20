@@ -2,10 +2,11 @@ pipeline{
     agent any
 
     environment {
-        CONTAINER_NAME = "paygateuicont"
+        CONTAINER_NAME = 'paygatepostgrescont'
         DOCKERHUB_CREDENTIALS = 'dockerhubcred'
-        DOCKERHUB_REPO = 'paygateproj/paygateui'
-        DOCKERFILE_PATH = 'Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/Dockerfile'
+        DOCKERHUB_REPO = 'paygateproj/paygatepostgres'
+        DOCKERFILE_PATH = 'Postgres/Dockerfile'
+        DB_VOLUME_NAME = "postgresdb_data"
     }
 
     stages {
@@ -20,7 +21,7 @@ pipeline{
         stage('Build Docker Image'){
             steps {
                 script {
-                    dockerImage = docker.build("$DOCKERHUB_REPO:V$BUILD_NUMBER", "-f $DOCKERFILE_PATH .")
+                    dockerImage = docker.build( "$DOCKERHUB_REPO:V$BUILD_NUMBER", "-f $DOCKERFILE_PATH .")
                 }
             }
         }
@@ -54,7 +55,15 @@ pipeline{
 
         stage('Deploy Latest Container') {
             steps {
-                sh "docker run --name $CONTAINER_NAME -dp 0.0.0.0:6061:8080 ${DOCKERHUB_REPO}:V$BUILD_NUMBER"
+                script {
+                    // Run the PostgreSQL container with the declared volume
+                    sh """
+                    docker run -d \
+                        -v ${DB_VOLUME_NAME}:/var/lib/postgresql/data \
+                        -p 0.0.0.0:2345:5432 \
+                        ${DOCKERHUB_REPO}:V$BUILD_NUMBER
+                    """
+                }
             }
         }
 
@@ -72,6 +81,7 @@ pipeline{
                 }
             }
         }
+
     }
 
 }

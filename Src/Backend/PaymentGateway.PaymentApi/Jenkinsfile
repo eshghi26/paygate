@@ -2,10 +2,10 @@ pipeline{
     agent any
 
     environment {
-        CONTAINER_NAME = "paygateuicont"
+        CONTAINER_NAME = "paygatepayapicont"
         DOCKERHUB_CREDENTIALS = 'dockerhubcred'
-        DOCKERHUB_REPO = 'paygateproj/paygateui'
-        DOCKERFILE_PATH = 'Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/Dockerfile'
+        DOCKERHUB_REPO = 'paygateproj/paygatepayapi'
+        DOCKERFILE_PATH = 'Src/Backend/PaymentGateway.PaymentApi/Dockerfile'
     }
 
     stages {
@@ -54,7 +54,7 @@ pipeline{
 
         stage('Deploy Latest Container') {
             steps {
-                sh "docker run --name $CONTAINER_NAME -dp 0.0.0.0:6061:8080 ${DOCKERHUB_REPO}:V$BUILD_NUMBER"
+                sh "docker run --name $CONTAINER_NAME -dp 0.0.0.0:5052:8080 ${DOCKERHUB_REPO}:V$BUILD_NUMBER"
             }
         }
 
