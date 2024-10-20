@@ -59,7 +59,7 @@ pipeline{
                     // Run the PostgreSQL container with the declared volume
                     sh """
                     docker run -d \
-                        --name $CONTAINER_NAME
+                        --name $CONTAINER_NAME \
                         -v ${DB_VOLUME_NAME}:/var/lib/postgresql/data \
                         -p 0.0.0.0:2345:5432 \
                         ${DOCKERHUB_REPO}:V$BUILD_NUMBER
