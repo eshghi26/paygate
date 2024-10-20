@@ -55,7 +55,7 @@ pipeline{
             steps {
                 script {
                     // Define the regular expression pattern for image names, excluding the current build's image
-                    def imagePattern = "^${DOCKERHUB_REPO}_.*"
+                    def imagePattern = "^${DOCKERHUB_REPO}.*"
                     def currentImage = "${DOCKERHUB_REPO}:V$BUILD_NUMBER"
 
                     // Find and remove all images matching the pattern, but exclude the current build's image
