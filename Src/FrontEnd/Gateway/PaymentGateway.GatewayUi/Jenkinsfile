@@ -51,6 +51,12 @@ pipeline{
             }
         }
 
+        stage('Deploy Latest Container') {
+            steps {
+                sh "docker run --name $CONTAINER_NAME -dp 0.0.0.0:6061:8080 ${DOCKERHUB_REPO}:V$BUILD_NUMBER"
+            }
+        }
+
         stage('Delete Previous Images from Jenkins') {
             steps {
                 script {
@@ -63,12 +69,6 @@ pipeline{
                     docker images --format "{{.Repository}}:{{.Tag}}" | grep "${imagePattern}" | grep -v "${currentImage}" | xargs -r docker rmi -f
                     """
                 }
-            }
-        }
-
-        stage('Deploy Latest Container') {
-            steps {
-                sh "docker run --name $CONTAINER_NAME -dp 0.0.0.0:6061:8080 ${DOCKERHUB_REPO}:V$BUILD_NUMBER"
             }
         }
     }
