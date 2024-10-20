@@ -60,7 +60,7 @@ pipeline{
 
         stage('Deploy Latest Container') {
             steps {
-                sh "docker run --name $CONTAINER_NAME -dp 0.0.0.0:6060:8080 $IMAGE_NAME"
+                sh "docker run --name $CONTAINER_NAME -dp 0.0.0.0:6061:8080 $IMAGE_NAME"
             }
         }
     }
