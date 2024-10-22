@@ -2,19 +2,20 @@ pipeline{
     agent any
 
     environment {
-        CONTAINER_NAME = 'paygatepostgrescont'
-        DOCKERHUB_CREDENTIALS = 'dockerhubcred'
-        DOCKERHUB_REPO = 'paygateproj/paygatepostgres'
-        DOCKERFILE_PATH = 'Postgres/Dockerfile'
-        DB_VOLUME_NAME = "postgresdb_data"
+        CONTAINER_NAME = 'paygaterediscont'
+        DOCKERHUB_CREDENTIALS = 'paygatedockerhub'
+        DOCKERHUB_REPO = 'paygateproj/paygateredis'
+        DOCKERFILE_PATH = 'Redis/Dockerfile'
+        DB_VOLUME_NAME = "redisdb_data"
+        REDIS_PASS = 'Systemmige1'
     }
 
     stages {
         stage('Fetch Code') {
             steps {
-                git url: 'git@gitlab.com:rezadoodangi/paymentgateway.git',
+                git url: 'https://gitlab.com/rezadoodangi/paymentgateway.git',
                 branch: 'master',
-                credentialsId: 'mygithubpk'
+                credentialsId: 'paygatetesttoken'
             }
         }
 
@@ -60,9 +61,10 @@ pipeline{
                     sh """
                     docker run -d \
                         --name $CONTAINER_NAME \
-                        -v ${DB_VOLUME_NAME}:/var/lib/postgresql/data \
-                        -p 0.0.0.0:2345:5432 \
-                        ${DOCKERHUB_REPO}:V$BUILD_NUMBER
+                        -v ${DB_VOLUME_NAME}:/data \
+                        -p 0.0.0.0:9736:6379 \
+                        ${DOCKERHUB_REPO}:V$BUILD_NUMBER \
+                        --requirepass $REDIS_PASS
                     """
                 }
             }

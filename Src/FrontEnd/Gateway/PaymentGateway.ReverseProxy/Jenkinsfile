@@ -2,63 +2,13 @@ pipeline{
     agent any
 
     environment {
-        CONTAINER_NAME = "paygateuicont"
+        CONTAINER_NAME = "paygatefrontproxycont"
         DOCKERHUB_CREDENTIALS = 'dockerhubcred'
-        DOCKERHUB_REPO = 'paygateproj/paygateui'
-        DOCKERFILE_PATH = 'Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/Dockerfile'
+        DOCKERHUB_REPO = 'paygateproj/paygatefrontproxy'
+        DOCKERFILE_PATH = 'Src/FrontEnd/Gateway/PaymentGateway.ReverseProxy/Dockerfile'
     }
 
     stages {
-        stage('Wait for All Dpendent Containers to be Running') {
-            steps {
-                script {
-                    // List of container names or IDs to check
-                    def containers = ['paygaterediscont']
-
-                    // Define a timeout in seconds for waiting
-                    def timeoutSeconds = 300 // 5 minutes
-
-                    // Time in seconds between checks
-                    def checkInterval = 5
-
-                    // Check if all containers are running
-                    def allContainersRunning = false
-                    def elapsedSeconds = 0
-
-                    while (!allContainersRunning && elapsedSeconds < timeoutSeconds) {
-                        allContainersRunning = true // Assume all are running at first
-
-                        // Loop through each container to check its status
-                        for (container in containers) {
-                            def result = sh(
-                                script: "docker inspect -f '{{.State.Running}}' ${container} || echo 'false'",
-                                returnStdout: true
-                            ).trim()
-
-                            if (result != 'true') {
-                                echo "Container ${container} is not running yet."
-                                allContainersRunning = false // If any container is not running, set to false
-                                break
-                            }
-                        }
-
-                        if (!allContainersRunning) {
-                            echo "Waiting for all containers to start..."
-                            sleep(checkInterval)
-                            elapsedSeconds += checkInterval
-                        }
-                    }
-
-                    // If not all containers are running after the timeout, fail the build
-                    if (!allContainersRunning) {
-                        error "One or more containers failed to start within the timeout period."
-                    } else {
-                        echo "All containers are running."
-                    }
-                }
-            }
-        }
-
         stage('Fetch Code') {
             steps {
                 git url: 'git@gitlab.com:rezadoodangi/paymentgateway.git',
@@ -108,9 +58,7 @@ pipeline{
                     sh """
                     docker run -d \
                         --name $CONTAINER_NAME \
-                        -e ASPNETCORE_ENVIRONMENT=Development \
-                        -e ASPNETCORE_HTTP_PORTS=8080 \
-                        -p 0.0.0.0:6061:8080 \
+                        -p 0.0.0.0:80:80 \
                         ${DOCKERHUB_REPO}:V$BUILD_NUMBER
                     """
                 }
