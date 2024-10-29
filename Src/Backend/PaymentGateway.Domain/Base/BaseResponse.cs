@@ -11,16 +11,23 @@ namespace PaymentGateway.Domain.Base
             Code = ((short)statusCode).ToString();
         }
 
-        public BaseResponse(string token)
+        public BaseResponse(Guid token)
         {
             Status = "success";
-            Token = token;
+            Token = token.ToString();
+        }
+
+        public BaseResponse(string code)
+        {
+            Status = "success";
+            Code = code;
         }
 
         public string Status { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Code { get; set; }
+
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Token { get; set; }
     }

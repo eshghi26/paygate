@@ -4,12 +4,14 @@ using PaymentGateway.Domain.Payment.Gateways;
 using PaymentGateway.Domain.Payment.Merchants;
 using PaymentGateway.Domain.Payment.Resources;
 using PaymentGateway.Domain.Payment.TokenInfos;
+using PaymentGateway.Domain.Payment.Transactions;
 using PaymentGateway.Domain.Payment.UserCards;
 using PaymentGateway.Domain.Security.Users;
 using PaymentGateway.Infrastructure.Payment.Gateways;
 using PaymentGateway.Infrastructure.Payment.Merchants;
 using PaymentGateway.Infrastructure.Payment.Resources;
 using PaymentGateway.Infrastructure.Payment.TokenInfos;
+using PaymentGateway.Infrastructure.Payment.Transactions;
 using PaymentGateway.Infrastructure.Payment.UserCards;
 using PaymentGateway.Infrastructure.Security.Users;
 #endregion
@@ -58,6 +60,17 @@ namespace PaymentGateway.Infrastructure
             get
             {
                 return _tokenInfoRepository ??= new TokenInfoRepository();
+            }
+        }
+        #endregion
+
+        #region Transaction
+        private TransactionRepository? _transactionRepository;
+        public ITransactionRepository TransactionRepository
+        {
+            get
+            {
+                return _transactionRepository ??= new TransactionRepository();
             }
         }
         #endregion

@@ -1,5 +1,5 @@
 # Use the official Redis image as the base image
-FROM redis:alpine
+FROM redis
 
 # Set the working directory to /data
 WORKDIR /data

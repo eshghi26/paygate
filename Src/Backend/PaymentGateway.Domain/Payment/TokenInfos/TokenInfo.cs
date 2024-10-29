@@ -14,5 +14,9 @@
         public DateTime CreateOn { get; set; }
         public string? MerchantUserId { get; set; }
         public string? Captcha { get; set; }
+        public string? Obj { get; set; }
+        public string? ExtraValue1 { get; set; }
+        public string? ExtraValue2 { get; set; }
+        public string? InvoiceNumber { get; set; }
     }
 }

@@ -1,7 +1,13 @@
 using Common.Helper.Helper;
 using PaymentGateway.PaymentApi;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((context, config) =>
+{
+    config.ReadFrom.Configuration(context.Configuration);
+});
 
 builder.AddServiceRegistry();
 builder.AddFactoryServices();

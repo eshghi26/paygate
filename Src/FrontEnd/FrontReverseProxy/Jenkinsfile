@@ -1,0 +1,85 @@
+pipeline{
+    agent any
+
+    environment {
+        CONTAINER_NAME = "paygatefrontproxycont"
+        DOCKERHUB_CREDENTIALS = 'paygatedockerhubcred'
+        DOCKERHUB_REPO = 'paygateproj/paygatefrontproxy'
+        DOCKERFILE_PATH = 'Src/FrontEnd/FrontReverseProxy/Dockerfile'
+    }
+
+    stages {
+        stage('Fetch Code') {
+            steps {
+                git url: 'https://gitlab.com/rezadoodangi/paymentgateway.git',
+                branch: 'master',
+                credentialsId: 'paygategitlabcred'
+            }
+        }
+
+        stage('Build Docker Image'){
+            steps {
+                script {
+                    dockerImage = docker.build("$DOCKERHUB_REPO:$BUILD_TIMESTAMP", "-f $DOCKERFILE_PATH .")
+                }
+            }
+        }
+
+        stage('Delete Previous Container') {
+            steps {
+                script {
+                    // Check if the container exists and stop it if running
+                    sh """
+                    if [ \$(docker ps -a -q -f name=$CONTAINER_NAME) ]; then
+                        echo "Stopping and removing existing container..."
+                        docker stop $CONTAINER_NAME || true
+                        docker rm $CONTAINER_NAME || true
+                    else
+                        echo "No previous container found."
+                    fi
+                    """
+                }
+            }
+        }
+
+        stage('Create Docker Network if Not Exists') {
+            steps {
+                script {
+                    // Check if the Docker network exists, and create it if not
+                    sh 'docker network inspect my-network >/dev/null 2>&1 || docker network create my-network'
+                }
+            }
+        }
+
+        stage('Deploy Latest Container') {
+            steps {
+                script {
+                    sh """
+                    docker run -d \
+                        --name $CONTAINER_NAME \
+                        --network my-network \
+                        -p 0.0.0.0:80:9412 \
+                        -p 0.0.0.0:2945:9736 \
+                        ${DOCKERHUB_REPO}:$BUILD_TIMESTAMP
+                    """
+                }
+            }
+        }
+
+        stage('Delete Previous Images from Jenkins') {
+            steps {
+                script {
+                    // Define the regular expression pattern for image names, excluding the current build's image
+                    def imagePattern = "^${DOCKERHUB_REPO}.*"
+                    def currentImage = "${DOCKERHUB_REPO}:$BUILD_TIMESTAMP"
+
+                    // Find and remove all images matching the pattern, but exclude the current build's image
+                    sh """
+                    docker images --format "{{.Repository}}:{{.Tag}}" | grep "${imagePattern}" | grep -v "${currentImage}" | xargs -r docker rmi -f
+                    """
+                }
+            }
+        }
+    }
+
+}

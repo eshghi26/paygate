@@ -1,12 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Collections.Concurrent;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using PaymentGateway.Domain.Payment.TokenInfos.Dto;
+using PaymentGateway.Domain.Payment.Transactions.Dto;
 using PaymentGateway.GatewayUi.Models;
+using System.Net;
 
 namespace PaymentGateway.GatewayUi.Controllers
 {
-    public class GatewayController (IHttpClientFactory httpClientFactory, 
-        IConfiguration config) : Controller
+    public class GatewayController(IHttpClientFactory httpClientFactory,
+        IConfiguration config, ILogger<GatewayController> logger) : Controller
     {
         public async Task<IActionResult> Payment(string? id)
         {
@@ -19,18 +22,18 @@ namespace PaymentGateway.GatewayUi.Controllers
             {
                 var baseUrl = config["Settings:PaymentBaseUrl"];
                 var paymentSecretKey = config["Settings:PaymentSecretKey"];
-                
+
                 var client = httpClientFactory.CreateClient();
                 client.DefaultRequestHeaders.Add("SecretKey", paymentSecretKey);
 
-                var apiAddress = $"{baseUrl}/api/v1/Token/GetTokenInfo/{id}";
+                var apiAddress = $"{baseUrl}/api/v1/Payment/GetTokenInfo/{id}";
                 var response = await client.GetAsync(apiAddress);
-                
-                if (response.StatusCode != System.Net.HttpStatusCode.OK)
+
+                if (response.StatusCode != HttpStatusCode.OK)
                 {
                     return View("NotFoundContent");
                 }
-                
+
                 var result = await response.Content.ReadFromJsonAsync<GetTokenInfoResponse>();
                 if (result == null)
                 {
@@ -52,79 +55,365 @@ namespace PaymentGateway.GatewayUi.Controllers
                 var dis = result.ExpireDate - DateTime.Now;
                 model.ExpireTime = dis.TotalMilliseconds;
 
+                if (result.Cards != null && result.Cards.Any())
+                {
+                    if (_cardDic.ContainsKey(id))
+                    {
+                        _cardDic.TryRemove(id.Trim(), out _);
+                    }
+
+                    _cardDic.TryAdd(id, new UserCardsModel
+                    {
+                        ExpireDate = result.ExpireDate,
+                        Cards = result.Cards.Select(c => new CardViewModel
+                        {
+                            Id = c.Id,
+                            Pan = c.Pan,
+                            Cvv2 = c.Cvv2,
+                            ExpYear = c.ExpYear,
+                            ExpMonth = c.ExpMonth
+                        }).ToArray()
+                    });
+                }
+
                 return View(model);
             }
             catch (Exception exp)
             {
+                logger.LogError(exp, exp.Message);
+
                 return View("Error");
             }
         }
 
-        private readonly CardViewModel[] _cards =
-        [
-            new CardViewModel { Id = 1, CardNumber = "6037992518722564", Cvv2 = "570", ExpYear = "04", ExpMonth ="02" },
-            new CardViewModel { Id = 2, CardNumber = "5411238536548754", Cvv2 = "780", ExpYear = "05", ExpMonth ="05" },
-            new CardViewModel { Id = 3, CardNumber = "6037845887647863", Cvv2 = "3125", ExpYear = "06", ExpMonth ="07" },
-            new CardViewModel { Id = 4, CardNumber = "5487963214569854", Cvv2 = "254", ExpYear = "08", ExpMonth ="11" }
-        ];
-
-        private string? GetCardFormat(string? cardNumber, bool isMusked = false)
-        {
-            if (string.IsNullOrWhiteSpace(cardNumber))
-                return null;
-
-            if (isMusked && cardNumber.Length == 16)
-            {
-                cardNumber = cardNumber.Substring(0, 6) + "******" + cardNumber.Substring(12, 4);
-            }
-
-            var retStr = string.Empty;
-
-            for (var i = 1; i <= cardNumber.Length; i++)
-            {
-                retStr += i % 4 == 0 ? cardNumber[i - 1] + " " : cardNumber[i - 1];
-            }
-
-            return retStr;
-        }
-
         [HttpPost]
-        public IActionResult SendCardData(PaymentViewModel data)
+        public async Task<IActionResult> StartTransaction(PaymentViewModel data)
         {
             try
             {
-                return PartialView();
+                #region Validation
+                if (string.IsNullOrWhiteSpace(data.Token))
+                {
+                    return StatusCode(500, new { message = "توکن ارسالی معتبر نمی باشد. لطفا تغییری در آدرس صفحه پرداخت ایجاد نکنید" });
+                }
+
+                if (string.IsNullOrWhiteSpace(data.Pan))
+                {
+                    return StatusCode(500, new { message = "لطفا شماره کارت را وارد نمایید" });
+                }
+
+                var pan = data.Pan.Trim().Replace(" ", "");
+
+                if (pan.Length != 16)
+                {
+                    return StatusCode(500, new { message = "شماره کارت 16 رقمی را بصورت صحیح وارد نمایید" });
+                }
+                #endregion
+
+                #region Call Payment Api
+                var startTrans = new StartTransactionDto
+                {
+                    Token = data.Token,
+                    Captcha = data.CaptchaCode,
+                    SavePan = data.SavePan,
+                    Pan = pan,
+                    Cvv2 = data.Cvv2,
+                    ExpMonth = data.ExpMonth,
+                    ExpYear = data.ExpYear
+                };
+
+                var baseUrl = config["Settings:PaymentBaseUrl"];
+                var paymentSecretKey = config["Settings:PaymentSecretKey"];
+
+                var client = httpClientFactory.CreateClient();
+                client.DefaultRequestHeaders.Add("SecretKey", paymentSecretKey);
+
+                var apiAddress = $"{baseUrl}/api/v1/Payment/StartTransaction";
+                var response = await client.PostAsJsonAsync(apiAddress, startTrans);
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    if (response.StatusCode == HttpStatusCode.ExpectationFailed)
+                    {
+                        var errorMessage = await response.Content.ReadAsStringAsync();
+                        return StatusCode(500, new { message = errorMessage });
+                    }
+
+                    return StatusCode(500, new { message = "خطا در پاسخ وب سرور بانک. لطفا مجددا تلاش بفرمایید" });
+                }
+
+                var result = await response.Content.ReadAsStringAsync();
+                if (result != "true")
+                {
+                    return StatusCode(500, new { message = "عملیات نا موفق. لطفا مجددا تلاش بفرمایید" });
+                }
+
+                return PartialView("PaymentOtp");
+                #endregion
             }
             catch (Exception exp)
             {
-                return Json(null);
+                logger.LogError(exp, exp.Message);
+
+                return StatusCode(500, new { message = "خطای سیستمی لطفا کمی بعد مجددا تلاش کنید" });
             }
         }
 
         [HttpPost]
-        public IActionResult CardListChange(string selectedValue)
+        public async Task<IActionResult> FinishTransaction(FinishTransactionModel data)
         {
-            if (!long.TryParse(selectedValue, out var cardId))
+            try
             {
+                #region Validation
+                if (string.IsNullOrWhiteSpace(data.Token))
+                {
+                    return StatusCode(500, new { message = "توکن ارسالی معتبر نمی باشد. لطفا تغییری در آدرس صفحه پرداخت ایجاد نکنید" });
+                }
+
+                if (string.IsNullOrWhiteSpace(data.Pin))
+                {
+                    return StatusCode(500, new { message = "لطفا رمز پویا را وارد نمایید" });
+                }
+
+                if (data.Pin.Trim().Length < 5)
+                {
+                    return StatusCode(500, new { message = "رمز پویا حداقل بایید 5 رقم باشد" });
+                }
+                #endregion
+
+                #region Call Payment Api
+                var finishTrans = new FinishTransactionDto
+                {
+                    Token = data.Token,
+                    Pin = data.Pin
+                };
+
+                var baseUrl = config["Settings:PaymentBaseUrl"];
+                var paymentSecretKey = config["Settings:PaymentSecretKey"];
+
+                var client = httpClientFactory.CreateClient();
+                client.DefaultRequestHeaders.Add("SecretKey", paymentSecretKey);
+
+                var apiAddress = $"{baseUrl}/api/v1/Payment/FinishTransaction";
+                var response = await client.PostAsJsonAsync(apiAddress, finishTrans);
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    if (response.StatusCode == HttpStatusCode.ExpectationFailed)
+                    {
+                        var errorMessage = await response.Content.ReadAsStringAsync();
+                        return StatusCode(500, new { message = errorMessage });
+                    }
+
+                    return StatusCode(500, new { message = "خطا در پاسخ وب سرور بانک. لطفا مجددا تلاش بفرمایید" });
+                }
+
+                var result = await response.Content.ReadAsStringAsync();
+                if (result != "true")
+                {
+                    return StatusCode(500, new { message = "عملیات نا موفق. لطفا مجددا تلاش بفرمایید" });
+                }
+                #endregion
+
+                var redirectUrl = Url.Action("Result", "Gateway", new { token = data.Token });
+                return Json(new { success = true, redirectUrl });
+            }
+            catch (Exception exp)
+            {
+                logger.LogError(exp, exp.Message);
+
+                return StatusCode(500, new { message = "خطای سیستمی لطفا کمی بعد مجددا تلاش کنید" });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CancelTransaction(string token)
+        {
+            try
+            {
+                #region Validation
+                if (string.IsNullOrWhiteSpace(token))
+                {
+                    return StatusCode(500, new { message = "توکن ارسالی معتبر نمی باشد. لطفا تغییری در آدرس صفحه پرداخت ایجاد نکنید" });
+                }
+                #endregion
+
+                #region Call Payment Api
+                var baseUrl = config["Settings:PaymentBaseUrl"];
+                var paymentSecretKey = config["Settings:PaymentSecretKey"];
+
+                var client = httpClientFactory.CreateClient();
+                client.DefaultRequestHeaders.Add("SecretKey", paymentSecretKey);
+
+                var apiAddress = $"{baseUrl}/api/v1/Payment/CancelTransaction/{token}";
+                var response = await client.GetAsync(apiAddress);
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    if (response.StatusCode == HttpStatusCode.ExpectationFailed)
+                    {
+                        var errorMessage = await response.Content.ReadAsStringAsync();
+                        return StatusCode(500, new { message = errorMessage });
+                    }
+
+                    return StatusCode(500, new { message = "خطا در پاسخ وب سرور بانک. لطفا مجددا تلاش بفرمایید" });
+                }
+
+                var result = await response.Content.ReadAsStringAsync();
+                if (result != "true")
+                {
+                    return StatusCode(500, new { message = "عملیات نا موفق. لطفا مجددا تلاش بفرمایید" });
+                }
+                #endregion
+
+                var redirectUrl = Url.Action("Result", "Gateway", new { token });
+                return Json(new { success = true, redirectUrl });
+            }
+            catch (Exception exp)
+            {
+                logger.LogError(exp, exp.Message);
+
+                return StatusCode(500, new { message = "خطای سیستمی لطفا کمی بعد مجددا تلاش کنید" });
+            }
+        }
+
+        public async Task<IActionResult> Result(string? token)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(token))
+                {
+                    return View("NotFoundContent");
+                }
+
+                var baseUrl = config["Settings:PaymentBaseUrl"];
+                var paymentSecretKey = config["Settings:PaymentSecretKey"];
+
+                var client = httpClientFactory.CreateClient();
+                client.DefaultRequestHeaders.Add("SecretKey", paymentSecretKey);
+
+                var apiAddress = $"{baseUrl}/api/v1/Payment/GetPaymentInfo/{token}";
+                var response = await client.GetAsync(apiAddress);
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    return View("NotFoundContent");
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<GetPaymentInfoResponse>();
+                if (result == null)
+                {
+                    return View("NotFoundContent");
+                }
+
+                var model = new PaymentResultModel
+                {
+                    Token = result.Token,
+                    Amount = result.Amount,
+                    FinalAmount = result.FinalAmount,
+                    InvoiceNumber = result.InvoiceNumber,
+                    TrackingNumber = result.TrackingNumber,
+                    Status = result.Status,
+                    CallbackUrl = result.CallbackUrl
+                };
+
+                PurgeCards();
+
+                return View("PaymentResult", model);
+            }
+            catch (Exception exp)
+            {
+                logger.LogError(exp, exp.Message);
+
+                return View("NotFoundContent");
+            }
+        }
+
+        [HttpPost]
+        public IActionResult CardListChange(string token, string id)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(token)
+                    || !long.TryParse(id, out var cardId)
+                    || !_cardDic.TryGetValue(token, out var tokenCard))
+                {
+                    return Json(null);
+                }
+
+                var card = tokenCard.Cards?.FirstOrDefault(c => c.Id == cardId);
+                if (card == null)
+                {
+                    return Json(null);
+                }
+
+                var response = new CardViewModel
+                {
+                    Id = card.Id,
+                    Pan = GetCardFormat(card.Pan),
+                    Cvv2 = card.Cvv2,
+                    ExpMonth = card.ExpMonth,
+                    ExpYear = card.ExpYear,
+                };
+
+                return Json(response);
+            }
+            catch (Exception exp)
+            {
+                logger.LogError(exp, exp.Message);
+
                 return Json(null);
             }
-
-            var card = _cards.FirstOrDefault(c => c.Id == cardId);
-            if (card == null)
+        }
+        
+        private static ConcurrentDictionary<string, UserCardsModel> _cardDic = new();
+        private string? GetCardFormat(string? cardNumber, bool isMusked = false)
+        {
+            try
             {
-                return Json(null);
+                if (string.IsNullOrWhiteSpace(cardNumber))
+                    return null;
+
+                if (isMusked && cardNumber.Length == 16)
+                {
+                    cardNumber = cardNumber.Substring(0, 6) + "******" + cardNumber.Substring(12, 4);
+                }
+
+                var retStr = string.Empty;
+
+                for (var i = 1; i <= cardNumber.Length; i++)
+                {
+                    retStr += i % 4 == 0 ? cardNumber[i - 1] + " " : cardNumber[i - 1];
+                }
+
+                return retStr;
             }
-
-            var response = new CardViewModel
+            catch (Exception exp)
             {
-                Id = card.Id,
-                CardNumber = GetCardFormat(card.CardNumber),
-                Cvv2 = card.Cvv2,
-                ExpMonth = card.ExpMonth,
-                ExpYear = card.ExpYear,
-            };
+                logger.LogError(exp, exp.Message);
 
-            return Json(response);
+                return null;
+            }
+        }
+
+        private void PurgeCards()
+        {
+            try
+            {
+                var expiredCards = _cardDic
+                    .Where(c => c.Value.ExpireDate < DateTime.Now)
+                    .Select(c => c.Key)
+                    .ToArray();
+
+                foreach (var token in expiredCards)
+                {
+                    _cardDic.TryRemove(token, out _);
+                }
+            }
+            catch (Exception exp)
+            {
+                logger.LogError(exp, exp.Message);
+            }
         }
     }
 }

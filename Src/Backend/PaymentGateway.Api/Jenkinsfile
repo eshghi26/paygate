@@ -1,9 +1,9 @@
 pipeline{
-    agent any
+    agent {label 'BACKNODE'}
 
     environment {
         CONTAINER_NAME = "paygateapicont"
-        DOCKERHUB_CREDENTIALS = 'dockerhubcred'
+        DOCKERHUB_CREDENTIALS = 'paygatedockerhubcred'
         DOCKERHUB_REPO = 'paygateproj/paygateapi'
         DOCKERFILE_PATH = 'Src/Backend/PaymentGateway.Api/Dockerfile'
     }
@@ -61,26 +61,16 @@ pipeline{
 
         stage('Fetch Code') {
             steps {
-                git url: 'git@gitlab.com:rezadoodangi/paymentgateway.git',
+                git url: 'https://gitlab.com/rezadoodangi/paymentgateway.git',
                 branch: 'master',
-                credentialsId: 'mygithubpk'
+                credentialsId: 'paygategitlabcred'
             }
         }
 
         stage('Build Docker Image'){
             steps {
                 script {
-                    dockerImage = docker.build("$DOCKERHUB_REPO:V$BUILD_NUMBER", "-f $DOCKERFILE_PATH .")
-                }
-            }
-        }
-
-        stage('Push to Docker Hub') {
-            steps {
-                script {
-                    docker.withRegistry('', DOCKERHUB_CREDENTIALS) {
-                        dockerImage.push("V$BUILD_NUMBER")
-                    }
+                    dockerImage = docker.build("$DOCKERHUB_REPO:$BUILD_TIMESTAMP", "--rm -f $DOCKERFILE_PATH .")
                 }
             }
         }
@@ -102,6 +92,15 @@ pipeline{
             }
         }
 
+         stage('Create Docker Network if Not Exists') {
+            steps {
+                script {
+                    // Check if the Docker network exists, and create it if not
+                    sh 'docker network inspect my-network >/dev/null 2>&1 || docker network create my-network'
+                }
+            }
+        }
+
         stage('Deploy Latest Container') {
             steps {
                 script {
@@ -110,8 +109,8 @@ pipeline{
                         --name $CONTAINER_NAME \
                         -e ASPNETCORE_ENVIRONMENT=Development \
                         -e ASPNETCORE_HTTP_PORTS=8080 \
-                        -p 0.0.0.0:5051:8080 \
-                        ${DOCKERHUB_REPO}:V$BUILD_NUMBER
+                        --network my-network \
+                        ${DOCKERHUB_REPO}:$BUILD_TIMESTAMP
                     """
                 }
             }
@@ -122,12 +121,13 @@ pipeline{
                 script {
                     // Define the regular expression pattern for image names, excluding the current build's image
                     def imagePattern = "^${DOCKERHUB_REPO}.*"
-                    def currentImage = "${DOCKERHUB_REPO}:V$BUILD_NUMBER"
+                    def currentImage = "${DOCKERHUB_REPO}:$BUILD_TIMESTAMP"
 
                     // Find and remove all images matching the pattern, but exclude the current build's image
                     sh """
                     docker images --format "{{.Repository}}:{{.Tag}}" | grep "${imagePattern}" | grep -v "${currentImage}" | xargs -r docker rmi -f
                     """
+                    sh 'docker image prune -f'
                 }
             }
         }

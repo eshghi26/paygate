@@ -5,6 +5,12 @@ services:
   redisDb:
     image: redis:alpine
 
+  elasticsearch:
+    image: elasticsearch:8.15.3
+
+  kibana:
+    image: kibana:8.15.3
+
   paymentgateway.api:
     image: ${DOCKER_REGISTRY-}paymentgatewayapi
     build:
@@ -23,6 +29,11 @@ services:
       context: .
       dockerfile: Src/FrontEnd/Gateway/PaymentGateway.GatewayUi/Dockerfile
 
+networks:
+  elastic:
+    driver: bridge
+
+
 volumes:
   postgresdb_data:
-
+  esdata:

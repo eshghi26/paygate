@@ -1,0 +1,72 @@
+﻿<div class="row">
+    <div class="col-md-2">
+        <label>رمز پویا:</label>
+    </div>
+    <div class="col-md-3">
+        <input type="text" id="pin2Txt" inputmode="numeric" maxlength="8" class="form-control">
+        <span id="pin2Error" class="validation-span"></span>
+    </div>
+</div>
+<div class="row" style="padding-top: 15px">
+    <div id="errorMessage" class="alert alert-danger" style="display: none">
+                    
+    </div>
+</div>
+<div class="row" style="padding-top: 30px">
+    <div class="col-md-4"></div>
+    <div class="col-md-5">
+        <button type="button" id="cancelButton" class="btn btn-secondary btn-lg">انصراف</button>
+        <button type="button" id="payButton" class="btn btn-success btn-lg">پرداخت</button>
+    </div>
+    <div class="col-md-3"></div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#payButton').on('click', function () {
+            var isValid = true;
+
+            var pin2 = $('#pin2Txt').val();
+            $('#pin2Error').text('');
+
+            if (pin2.length == 0 || isNaN(pin2)) {
+                $('#pin2Error').text('فیلد اجباری');
+                isValid = false;
+            }
+            else if (pin2.length < 5) {
+                $('#pin2Error').text('حداقل 5 رقم بایید وارد شود');
+                isValid = false;
+            }
+
+            $("#errorMsg").hide();
+
+            if (isValid) {   
+                let formData = {
+                    pin: pin2,
+                    token: $("#token").val()
+                }
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/Gateway/FinishTransaction',
+                    data: formData,
+                    success: function (response) {
+                        window.location.href = response.redirectUrl;
+                    },
+                    error: function (xhr, status, error) {
+                        var errorMessage = xhr.responseJSON
+                            ? xhr.responseJSON.message
+                            : "خطا در ارسال درخواست";
+
+                        $("#errorMsg").text(errorMessage).show();
+                    }
+                });
+            }
+        });
+    });
+
+    document.getElementById('pin2Txt').addEventListener('input', function (e) {
+        let value = e.target.value.replace(/\D/g, '');
+        e.target.value = value;
+    });
+</script>

@@ -645,9 +645,13 @@ namespace Common.Helper.Extension
         /// </summary>
         /// <param name="number">شی دسیمال</param>
         /// <returns></returns>
-        public static decimal ToDecimal(this string number)
+        public static decimal ToDecimal(this string? number)
         {
-            Int64.TryParse(number, out long value);
+            if (string.IsNullOrWhiteSpace(number?.Trim()))
+                return 0;
+
+            decimal.TryParse(number.Trim(), out var value);
+
             return value;
         }
 

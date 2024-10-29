@@ -1,5 +1,5 @@
 # Use the official PostgreSQL image as the base image
-FROM postgres:15
+FROM postgres
 
 # Set environment variables for the database
 ENV POSTGRES_DB=PaymentGatewayDb
@@ -13,8 +13,8 @@ VOLUME ["/var/lib/postgresql/data"]
 # Uncomment the following lines if you have an init script
 # COPY ./init.sql /docker-entrypoint-initdb.d/
 # Copy custom configuration files
-COPY Postgres/postgresql.conf /etc/postgresql/13/main/postgresql.conf
-COPY Postgres/pg_hba.conf /etc/postgresql/13/main/pg_hba.conf
+COPY Postgres/postgresql.conf /usr/share/postgresql/postgresql.conf.sample
+COPY Postgres/pg_hba.conf /var/lib/postgresql/data/pg_hba.conf
 
 # Expose the PostgreSQL port
 EXPOSE 5432

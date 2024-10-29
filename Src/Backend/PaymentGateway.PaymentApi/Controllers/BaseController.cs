@@ -16,7 +16,9 @@ namespace PaymentGateway.PaymentApi.Controllers
         [ApiExplorerSettings(IgnoreApi = true)]
         public ObjectResult FailedOperation(string message, ErrorType type = ErrorType.Toast)
         {
-            return CustomError(message, HttpStatusCode.ExpectationFailed, type);
+            return StatusCode((int)HttpStatusCode.ExpectationFailed, message);
+
+            //return CustomError(message, HttpStatusCode.ExpectationFailed, type);
         }
 
         [ApiExplorerSettings(IgnoreApi = true)]

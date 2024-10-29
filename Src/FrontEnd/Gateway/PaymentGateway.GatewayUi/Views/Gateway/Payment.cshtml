@@ -7,7 +7,7 @@
 <div class="row payment">
     <div class="col-md-9 payment-left">
         <h3 class="payment-heading">اطلاعات پرداخت</h3>
-        <div class="form-group" style="padding-top: 20px">
+        <div class="form-group" id="paymentContent" style="padding-top: 20px">
             <div class="row">
                 <div class="col-md-2">
                     <label>انتخاب کارت:</label>
@@ -82,10 +82,15 @@
                     @* <img class="captcha" id="captcha-img" src="https://bpm.shaparak.ir/pgwchannel/captchaimg.jpg?RefId=B517E79EFA42D6F7" width="140" height="40"> *@
                 </div>
             </div>
+            <div class="row" style="padding-top: 15px">
+                <div id="errorMessage" class="alert alert-danger" style="display: none">
+                    
+                </div>
+            </div>
             <div class="row" style="padding-top: 30px">
                 <div class="col-md-4"></div>
                 <div class="col-md-5">
-                    <button type="button" class="btn btn-secondary btn-lg">انصراف</button>
+                    <button type="button" id="cancelButton" class="btn btn-secondary btn-lg">انصراف</button>
                     <button type="button" id="continueButton" class="btn btn-success btn-lg">ثبت و ادامه</button>
                 </div>
                 <div class="col-md-3"></div>
@@ -177,30 +182,56 @@
                 isValid = false;
             }
 
+            $("#errorMessage").hide();
+
             if (isValid) {
                 let formData = {
-                    cardNumber: $("#cardNumber").val(),
+                    pan: $("#cardNumber").val(),
                     cvv2: $("#cvvTxt").val(),
                     expMonth: $("#expMonthTxt").val(),
                     expYear: $("#expYearTxt").val(),
                     captchaCode: $("#captchaTxt").val(),
                     token: $("#token").val(),
-                    saveCard: $("#cardCheckBox").is(":checked");
+                    savePan: $("#cardCheckBox").is(":checked")
                 }
 
                 $.ajax({
                     type: 'POST',
-                    url: '/Gateway/SendCardData',
+                    url: '/Gateway/StartTransaction',
                     data: formData,
                     success: function (response) {
-                        setCardItems(response);
+                       $("#paymentContent").html(response);                        
                     },
-                    error: function () {
-                        // در صورت بروز خطا
-                        console.log('خطا در ارسال درخواست');
+                    error: function (xhr, status, error) {
+                        var errorMessage = xhr.responseJSON 
+                           ? xhr.responseJSON.message 
+                           : "خطا در ارسال درخواست";
+
+                        $("#errorMessage").text(errorMessage).show();
                     }
                 });
             }
+        });
+    });
+
+    $(document).ready(function () {
+        $('#cancelButton').on('click', function () {
+            var tokenValue = $("#token").val();
+            $.ajax({
+                type: 'POST',
+                url: '/Gateway/CancelTransaction',
+                data: { token: tokenValue },
+                success: function (response) {
+                    window.location.href = response.redirectUrl;
+                },
+                error: function (xhr, status, error) {
+                    var errorMessage = xhr.responseJSON
+                        ? xhr.responseJSON.message
+                        : "خطا در ارسال درخواست";
+
+                    $("#errorMessage").text(errorMessage).show();
+                }
+            });
         });
     });
 
@@ -211,10 +242,11 @@
             setCardItems(null);
         }
         else {
+            var tokenValue = $("#token").val();
             $.ajax({
                 type: 'POST',
                 url: '/Gateway/CardListChange',
-                data: { selectedValue: selectedValue },
+                data: { token: tokenValue, id: selectedValue },
                 success: function (response) {
                     setCardItems(response);
                 },
@@ -243,9 +275,10 @@
             $("#cvvTxt").prop("disabled", false);
             $("#expMonthTxt").prop("disabled", false);
             $("#expYearTxt").prop("disabled", false);
+            $("#cardCheckBox").prop("disabled", false);
         }
         else {
-            $('#cardNumber').val(cardItem.cardNumber);
+            $('#cardNumber').val(cardItem.pan);
             $('#cvvTxt').val(cardItem.cvv2);
             $('#expMonthTxt').val(cardItem.expMonth);
             $('#expYearTxt').val(cardItem.expYear);
@@ -254,7 +287,8 @@
             $("#cvvTxt").prop("disabled", true);
             $("#expMonthTxt").prop("disabled", true);
             $("#expYearTxt").prop("disabled", true);
-
+            $("#cardCheckBox").prop("disabled", true);
+            $("#cardCheckBox").prop('checked', false);
         }
     }
 

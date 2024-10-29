@@ -40,7 +40,7 @@ namespace PaymentGateway.Infrastructure.Payment.UserCards
             prams.Add("@Cvv2", entity.Cvv2);
             prams.Add("@ExpYear", entity.ExpYear);
             prams.Add("@ExpMonth", entity.ExpMonth);
-            prams.Add("@Displayable", entity.ExpMonth);
+            prams.Add("@Displayable", entity.Displayable);
             prams.Add("@CreateOn", DateTime.Now);
             prams.Add("@IsDeleted", false);
 

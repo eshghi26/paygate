@@ -1,0 +1,86 @@
+﻿@{
+    ViewData["Title"] = "Payment Result";
+}
+
+@model PaymentResultModel
+
+<style>
+    .transaction-result {
+        margin-top: 70px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .card {
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .success-icon {
+        color: green;
+        font-size: 3rem;
+    }
+
+    .error-icon {
+        color: red;
+        font-size: 3rem;
+    }
+</style>
+
+<div class="transaction-result">
+    <div class="card p-4">
+        <div class="text-center">
+            @if (Model.Status == 1)
+            {
+                <div class="success-icon">&#10003;</div>
+                <h3 class="mt-3">تراکنش موفق</h3>
+                <p>پرداخت شما با موفقیت انجام شد.</p>
+            }
+            else
+            {
+                <div class="error-icon">&#10060;</div>
+                <h3 class="mt-3">تراکنش ناموفق</h3>
+                <p>پرداخت نا موفق. لطفاً دوباره امتحان کنید.</p>
+            }
+        </div>
+
+        <h2>در حال انتقال به سایت پذیرنده در <span id="countdown">10</span> ثانیه...</h2>
+
+        <div class="mt-4 text-center">
+            <form id="redirectForm" method="post" action="@Model.CallbackUrl">
+               
+                <input type="hidden" name="token" value="@Model.Token" />
+                <input type="hidden" name="status" value="@Model.Status" />
+                <input type="hidden" name="amount" value="@Model.Amount" />
+                <input type="hidden" name="finalAmount" value="@Model.FinalAmount" />
+                <input type="hidden" name="invoiceNumber" value="@Model.InvoiceNumber" />
+                <input type="hidden" name="trackingNumber" value="@Model.TrackingNumber" />
+
+                <button type="button" onclick="submitFormManually()"
+                        class="btn btn-primary">
+                    بازگشت به سایت پذیرنده
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    var seconds = 10;
+    var countdownElement = document.getElementById('countdown');
+
+    var countdownInterval = setInterval(function () {
+        seconds--;
+        countdownElement.textContent = seconds;
+
+        if (seconds <= 0) {
+            clearInterval(countdownInterval);
+            document.getElementById('redirectForm').submit();
+        }
+    }, 1000);
+
+    function submitFormManually() {
+        clearInterval(countdownInterval);
+        document.getElementById('redirectForm').submit();
+    }
+</script>

@@ -9,7 +9,6 @@
   <ItemGroup>
     <Folder Include="Payment\Gateways\Commands\" />
     <Folder Include="Payment\Merchants\Commands\" />
-    <Folder Include="Payment\UserCards\Commands\" />
     <Folder Include="Security\Controllers\Commands\" />
     <Folder Include="Security\Controllers\Queries\" />
     <Folder Include="Security\Permissions\Commands\" />

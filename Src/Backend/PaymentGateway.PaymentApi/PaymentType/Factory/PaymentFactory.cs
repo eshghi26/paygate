@@ -1,5 +1,5 @@
 ﻿using Common.Helper.Enum;
-using PaymentGateway.PaymentApi.PaymentType.Concrete;
+using PaymentGateway.PaymentApi.PaymentType.Concrete.Aqayepardakht;
 
 namespace PaymentGateway.PaymentApi.PaymentType.Factory
 {

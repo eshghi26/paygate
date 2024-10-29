@@ -50,6 +50,10 @@ namespace PaymentGateway.Infrastructure.Payment.TokenInfos
             prams.Add("@CreateOn", DateTime.Now);
             prams.Add("@MerchantUserId", entity.MerchantUserId);
             prams.Add("@Captcha", entity.Captcha);
+            prams.Add("@Obj", entity.Obj);
+            prams.Add("@ExtraValue1", entity.ExtraValue1);
+            prams.Add("@ExtraValue2", entity.ExtraValue2);
+            prams.Add("@InvoiceNumber", entity.InvoiceNumber);
 
             var entityId = (await db.QueryAsync<int>(
                 $@"INSERT INTO {TableName} 
@@ -65,6 +69,10 @@ namespace PaymentGateway.Infrastructure.Payment.TokenInfos
                                       ,""CreateOn""
                                       ,""MerchantUserId""
                                       ,""Captcha""
+                                      ,""Obj""
+                                      ,""ExtraValue1""
+                                      ,""ExtraValue2""
+                                      ,""InvoiceNumber""
                                )
                                VALUES
                                (
@@ -79,6 +87,10 @@ namespace PaymentGateway.Infrastructure.Payment.TokenInfos
                                       ,@CreateOn
                                       ,@MerchantUserId
                                       ,@Captcha
+                                      ,@Obj
+                                      ,@ExtraValue1
+                                      ,@ExtraValue2
+                                      ,@InvoiceNumber
                                );
                                SELECT currval('""Payment"".""TokenInfos_Id_seq""');", prams)).SingleOrDefault();
 
@@ -103,6 +115,10 @@ namespace PaymentGateway.Infrastructure.Payment.TokenInfos
                                        ,""GatewayId"" = @GatewayId
                                        ,""MerchantUserId"" = @MerchantUserId
                                        ,""Captcha"" = @Captcha
+                                       ,""Obj"" = @Obj
+                                       ,""ExtraValue1"" = @ExtraValue1
+                                       ,""ExtraValue2"" = @ExtraValue2
+                                       ,""InvoiceNumber"" = @InvoiceNumber
                                    WHERE ""Id"" = @Id";
 
             var rowsAffected = await db.ExecuteAsync(sqlQuery, new
@@ -117,6 +133,10 @@ namespace PaymentGateway.Infrastructure.Payment.TokenInfos
                 entity.GatewayId,
                 entity.MerchantUserId,
                 entity.Captcha,
+                entity.Obj,
+                entity.ExtraValue1,
+                entity.ExtraValue2,
+                entity.InvoiceNumber,
                 entity.Id
             });
 

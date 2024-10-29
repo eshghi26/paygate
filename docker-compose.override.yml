@@ -17,6 +17,29 @@ services:
     ports:
       - "6381:6379"
 
+  elasticsearch:
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    restart: always
+    ports:
+      - "9200:9200"
+    networks:
+      - elastic
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+  kibana:
+    container_name: kibana
+    restart: always
+    ports:
+      - "5601:5601"    
+    networks:
+      - elastic
+    depends_on:
+      - elasticsearch
+
   paymentgateway.api:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
@@ -31,12 +54,10 @@ services:
       - ASPNETCORE_HTTP_PORTS=8080
     ports:
       - "8080"
-
-
+      
   paymentgateway.gatewayui:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
     ports:
       - "8080"
-

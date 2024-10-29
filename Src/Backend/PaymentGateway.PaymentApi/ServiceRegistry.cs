@@ -1,7 +1,7 @@
 ﻿using PaymentGateway.Application.Security.Users.Queries;
 using PaymentGateway.Domain;
 using PaymentGateway.Infrastructure;
-using PaymentGateway.PaymentApi.PaymentType.Concrete;
+using PaymentGateway.PaymentApi.PaymentType.Concrete.Aqayepardakht;
 using PaymentGateway.PaymentApi.PaymentType.Factory;
 
 namespace PaymentGateway.PaymentApi

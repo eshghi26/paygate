@@ -6,7 +6,8 @@ namespace PaymentGateway.PaymentApi.Controllers
 {
     [Route("api/v1/[controller]")]
     [ApiController]
-    public class ResourceController (IMediator mediator): BaseController
+    public class ResourceController (IMediator mediator, 
+        ILogger<ResourceController> logger): BaseController
     {
         [HttpGet]
         [Route("GetResource/{name}")]
@@ -44,6 +45,7 @@ namespace PaymentGateway.PaymentApi.Controllers
             }
             catch (Exception exp)
             {
+                logger.LogError(exp, exp.Message);
                 return NotFound();
             }
         }
